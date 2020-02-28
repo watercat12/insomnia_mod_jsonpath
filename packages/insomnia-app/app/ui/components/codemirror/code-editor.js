@@ -20,6 +20,8 @@ import DropdownItem from '../base/dropdown/dropdown-item';
 import { query as queryXPath } from 'insomnia-xpath';
 import deepEqual from 'deep-equal';
 import zprint from 'zprint-clj';
+import set from 'set-value';
+import get from 'get-value';
 
 const TAB_KEY = 9;
 const TAB_SIZE = 4;
@@ -79,6 +81,7 @@ class CodeEditor extends React.Component {
 
     this.state = {
       filter: props.filter || '',
+      quick: true,
     };
 
     this._originalCode = '';
@@ -451,14 +454,40 @@ class CodeEditor extends React.Component {
   }
 
   _prettifyJSON(code) {
+    function resultsHandle(results) {
+      const data = {};
+      results.forEach((item, i) => {
+        let path = '';
+        item.path = item.path.slice(1);
+        item.path.forEach((p, index) => {
+          if (typeof p === 'number') {
+            if (get(data, path) === undefined) {
+              set(data, path, []);
+            }
+          }
+          index === 0 ? (path += p) : (path += '.' + p);
+        });
+        const value = item.value;
+        set(data, path, value, { merge: true });
+        console.log(path, ' = ', value);
+      });
+      return data;
+    }
+
     try {
       let jsonString = code;
 
       if (this.props.updateFilter && this.state.filter) {
         try {
           const codeObj = JSON.parse(code);
-          const results = jq.query(codeObj, this.state.filter.trim());
-          jsonString = JSON.stringify(results);
+          let results;
+          if (this.state.quick) {
+            results = jq.nodes(codeObj, this.state.filter.trim());
+            jsonString = JSON.stringify(resultsHandle(results));
+          } else {
+            results = jq.query(codeObj, this.state.filter.trim());
+            jsonString = JSON.stringify(results);
+          }
         } catch (err) {
           console.log('[jsonpath] Error: ', err);
           jsonString = '[]';
@@ -922,6 +951,26 @@ class CodeEditor extends React.Component {
         <button key="help" className="btn btn--compact" onClick={this._showFilterHelp}>
           <i className="fa fa-question-circle" />
         </button>,
+        <label
+          style={{
+            width: '12%',
+            display: 'inline-flex',
+            textAlign: 'center',
+            paddingTop: '0px',
+            paddingRight: '6px',
+          }}>
+          <input
+            type="checkbox"
+            name="fast"
+            style={{ marginLeft: '2px', marginTop: '2px' }}
+            checked={this.state.quick}
+            onChange={event => {
+              this.setState({ ...this.state, quick: !this.state.quick });
+              this.forceUpdate();
+            }}
+          />
+          Node
+        </label>,
       );
     }
 
