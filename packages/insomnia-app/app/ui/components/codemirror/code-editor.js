@@ -82,6 +82,7 @@ class CodeEditor extends React.Component {
     this.state = {
       filter: props.filter || '',
       quick: true,
+      node: true,
     };
 
     this._originalCode = '';
@@ -469,7 +470,6 @@ class CodeEditor extends React.Component {
         });
         const value = item.value;
         set(data, path, value, { merge: true });
-        console.log(path, ' = ', value);
       });
       return data;
     }
@@ -480,12 +480,32 @@ class CodeEditor extends React.Component {
       if (this.props.updateFilter && this.state.filter) {
         try {
           const codeObj = JSON.parse(code);
+          let query = this.state.filter.trim();
+          let filter = this.state.filter;
           let results;
           if (this.state.quick) {
-            results = jq.nodes(codeObj, this.state.filter.trim());
+            const filterItem = filter.split(',');
+            let queryItem = '';
+            for (let i = 0; i < filterItem.length; i++) {
+              let value = filterItem[i];
+              if (value === `*`) {
+                queryItem = `*`;
+                break;
+              }
+              queryItem += `"${value}",`;
+              if (i === filterItem.length - 1) {
+                queryItem += `""`;
+                break;
+              }
+            }
+            query = `$..[${queryItem}]`;
+          }
+          if (this.state.node) {
+            console.log(query);
+            results = jq.nodes(codeObj, query);
             jsonString = JSON.stringify(resultsHandle(results));
           } else {
-            results = jq.query(codeObj, this.state.filter.trim());
+            results = jq.query(codeObj, query);
             jsonString = JSON.stringify(results);
           }
         } catch (err) {
@@ -953,7 +973,7 @@ class CodeEditor extends React.Component {
         </button>,
         <label
           style={{
-            width: '12%',
+            width: '16%',
             display: 'inline-flex',
             textAlign: 'center',
             paddingTop: '0px',
@@ -961,7 +981,25 @@ class CodeEditor extends React.Component {
           }}>
           <input
             type="checkbox"
-            name="fast"
+            style={{ marginLeft: '2px', marginTop: '2px' }}
+            checked={this.state.node}
+            onChange={event => {
+              this.setState({ node: !this.state.node });
+              this._setFilter(this.state.filter);
+            }}
+          />
+          Node
+        </label>,
+        <label
+          style={{
+            width: '16%',
+            display: 'inline-flex',
+            textAlign: 'center',
+            paddingTop: '0px',
+            paddingRight: '6px',
+          }}>
+          <input
+            type="checkbox"
             style={{ marginLeft: '2px', marginTop: '2px' }}
             checked={this.state.quick}
             onChange={event => {
@@ -969,7 +1007,7 @@ class CodeEditor extends React.Component {
               this._setFilter(this.state.filter);
             }}
           />
-          Node
+          Quick
         </label>,
       );
     }
