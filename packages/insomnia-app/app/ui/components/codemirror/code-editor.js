@@ -965,8 +965,8 @@ class CodeEditor extends React.Component {
             style={{ marginLeft: '2px', marginTop: '2px' }}
             checked={this.state.quick}
             onChange={event => {
-              this.setState({ ...this.state, quick: !this.state.quick });
-              this.forceUpdate();
+              this.setState({ quick: !this.state.quick });
+              this._setFilter(this.state.filter);
             }}
           />
           Node
