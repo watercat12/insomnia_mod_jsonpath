@@ -501,7 +501,6 @@ class CodeEditor extends React.Component {
             query = `$..[${queryItem}]`;
           }
           if (this.state.node) {
-            console.log(query);
             results = jq.nodes(codeObj, query);
             jsonString = JSON.stringify(resultsHandle(results));
           } else {
