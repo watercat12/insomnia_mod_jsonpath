@@ -216,7 +216,7 @@
     "webpack-dev-server": "^3.3.1",
     "webpack-target-electron-renderer": "^0.4.0",
     "worker-loader": "^2.0.0",
-    "set-value": "^3.0.1",
+    "set-value": "^4.0.1",
     "get-value": "^3.0.1"
   }
 }
